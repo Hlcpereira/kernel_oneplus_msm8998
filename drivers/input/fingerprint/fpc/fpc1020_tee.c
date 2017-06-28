@@ -75,6 +75,8 @@ module_param(haptic_feedback_disable_fpr, bool, 0644);
 
 void qpnp_hap_ignore_next_request(void);
 
+extern bool s3320_stop_buttons;
+
 struct fpc1020_data {
 	struct device *dev;
     struct wake_lock ttw_wl;
@@ -338,9 +340,11 @@ static ssize_t report_home_set(struct device *dev,
 		return -EINVAL;
 	if (!strncmp(buf, "down", strlen("down")))
 	{
-            input_report_key(fpc1020->input_dev,
-                            KEY_HOME, 1);
-            input_sync(fpc1020->input_dev);
+		if (!s3320_stop_buttons) {
+			input_report_key(fpc1020->input_dev,
+				            KEY_HOME, 1);
+			input_sync(fpc1020->input_dev);
+		}
 	}
 	else if (!strncmp(buf, "up", strlen("up")))
 	{
