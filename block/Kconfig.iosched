@@ -34,7 +34,7 @@ config IOSCHED_DEADLINE
 
 config IOSCHED_MAPLE
 	tristate "Maple I/O scheduler"
-	default y
+	default n
 
 config IOSCHED_CFQ
 	tristate "CFQ I/O scheduler"
@@ -100,7 +100,7 @@ config IOSCHED_ZEN
 
 choice
 	prompt "Default I/O scheduler"
-	default DEFAULT_MAPLE
+	default DEFAULT_CFQ
 	help
 	  Select the I/O scheduler which will be used by default for all
 	  block devices.
