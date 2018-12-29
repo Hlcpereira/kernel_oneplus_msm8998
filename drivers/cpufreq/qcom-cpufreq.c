@@ -82,7 +82,7 @@ static int msm_cpufreq_target(struct cpufreq_policy *policy,
 
 	if (per_cpu(suspend_data, policy->cpu).device_suspended) {
 		pr_debug("cpufreq: cpu%d scheduling frequency change "
-				"in suspend.\n", policy->cpu);
+			"in suspend.\n", policy->cpu);
 		ret = -EFAULT;
 		goto done;
 	}
@@ -94,6 +94,7 @@ static int msm_cpufreq_target(struct cpufreq_policy *policy,
 		ret = -ENODEV;
 		goto done;
 	}
+
 	if (cpufreq_frequency_table_target(policy, table, target_freq, relation,
 			&index)) {
 		pr_err("cpufreq: invalid target_freq: %d\n", target_freq);

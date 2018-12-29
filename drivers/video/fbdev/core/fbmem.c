@@ -33,7 +33,6 @@
 #include <linux/efi.h>
 #include <linux/fb.h>
 #include <linux/sched.h>
-#include <linux/pm_qos.h>
 #include <linux/cpufreq.h>
 #include <linux/pm_wakeup.h>
 
