@@ -537,6 +537,7 @@ int mdss_dsi_panel_reset(struct mdss_panel_data *pdata, int enable)
 			gpio_free(ctrl_pdata->lcd_mode_sel_gpio);
 		}
 	}
+*/
 
 exit:
 	return rc;
