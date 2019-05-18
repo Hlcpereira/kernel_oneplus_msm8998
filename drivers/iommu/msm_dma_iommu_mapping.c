@@ -28,7 +28,6 @@
  */
 struct msm_iommu_map {
 	struct list_head lnode;
-	struct rb_node node;
 	struct device *dev;
 	struct scatterlist sgl;
 	unsigned int nents;
@@ -64,7 +63,6 @@ static void msm_iommu_meta_add(struct msm_iommu_meta *meta)
 		else
 			p = &(*p)->rb_right;
 	}
-
 	rb_link_node(&meta->node, parent, p);
 	rb_insert_color(&meta->node, root);
 	write_unlock(&rb_tree_lock);
@@ -123,9 +121,10 @@ static struct msm_iommu_map *msm_iommu_lookup_get(struct msm_iommu_meta *meta,
 static void msm_iommu_meta_destroy(struct kref *kref)
 {
 	struct msm_iommu_meta *meta = container_of(kref, typeof(*meta), ref);
+	struct rb_root *root = &iommu_root;
 
 	write_lock(&rb_tree_lock);
-	rb_erase(&meta->node, &iommu_root);
+	rb_erase(&meta->node, root);
 	write_unlock(&rb_tree_lock);
 
 	kfree(meta);
@@ -174,7 +173,7 @@ static int __msm_dma_map_sg(struct device *dev, struct scatterlist *sg,
 	bool extra_meta_ref_taken = false;
 	struct msm_iommu_meta *meta;
 	struct msm_iommu_map *map;
-	int ret = 0;
+	int ret;
 
 	meta = msm_iommu_meta_lookup_get(dma_buf->priv);
 	if (!meta) {
@@ -199,7 +198,6 @@ static int __msm_dma_map_sg(struct device *dev, struct scatterlist *sg,
 		 */
 		if (is_device_dma_coherent(dev))
 			dmb(ish);
-		ret = nents;
 	} else {
 		map = kmalloc(sizeof(*map), GFP_KERNEL);
 		if (!map) {
@@ -230,7 +228,7 @@ static int __msm_dma_map_sg(struct device *dev, struct scatterlist *sg,
 		msm_iommu_add(meta, map);
 	}
 
-	return ret;
+	return nents;
 
 release_meta:
 	if (extra_meta_ref_taken)
@@ -270,8 +268,8 @@ EXPORT_SYMBOL(msm_dma_map_sg_attrs);
 void msm_dma_unmap_sg(struct device *dev, struct scatterlist *sgl, int nents,
 		      enum dma_data_direction dir, struct dma_buf *dma_buf)
 {
-	struct msm_iommu_map *map;
 	struct msm_iommu_meta *meta;
+	struct msm_iommu_map *map;
 
 	meta = msm_iommu_meta_lookup_get(dma_buf->priv);
 	if (!meta)
@@ -304,6 +302,7 @@ int msm_dma_unmap_all_for_dev(struct device *dev)
 {
 	struct msm_iommu_map *map, *map_next;
 	struct rb_root *root = &iommu_root;
+	struct msm_iommu_meta *meta;
 	struct rb_node *meta_node;
 	LIST_HEAD(unmap_list);
 	int ret = 0;
@@ -311,8 +310,6 @@ int msm_dma_unmap_all_for_dev(struct device *dev)
 	read_lock(&rb_tree_lock);
 	meta_node = rb_first(root);
 	while (meta_node) {
-		struct msm_iommu_meta *meta;
-
 		meta = rb_entry(meta_node, typeof(*meta), node);
 		write_lock(&meta->lock);
 		list_for_each_entry_safe(map, map_next, &meta->maps, lnode) {
